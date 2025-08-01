@@ -5,8 +5,12 @@
 int match_space(FILE *f)
 {
     int c = fgetc(f);
-	while (c == ' ')
+	if (c == EOF || ferror(f))
+		return -1;
+	while (isspace(c))
 		c = fgetc(f);
+	if (ferror(f))
+		return -1;
 	ungetc(c, f);
     return (0);
 }
@@ -16,13 +20,17 @@ int match_char(FILE *f, char c)
     int cf = fgetc(f);
 	if (cf == c)
 		return 1;
-    return (0);
+	ungetc(cf, f);
+    return (-1);
 }
 
 int scan_char(FILE *f, va_list ap)
 {
 	char *ptr = va_arg(ap, char *);
-    *ptr = fgetc(f);
+	int cf = fgetc(f);
+	if (cf == EOF || ferror(f))
+		return -1;
+    *ptr = cf;
     return (1);
 }
 
@@ -31,6 +39,7 @@ int scan_int(FILE *f, va_list ap)
 	int sign = 1;
 	int num = 0;
 	int *ptr = va_arg(ap, int *);
+	int read_any = 0;
 	int c = fgetc(f);
 	if(c == '-' || c == '+')
 	{
@@ -40,10 +49,14 @@ int scan_int(FILE *f, va_list ap)
 	}
 	while(c >= '0'&& c <= '9')
 	{
+		read_any = 1;
 		num = num * 10 + (c - '0');
 		c = fgetc(f);
 	}
-	ungetc(c, f);
+	if (c != EOF)
+		ungetc(c, f);
+	if (!read_any)
+		return 0;
 	*ptr = num * sign;
     return (1);
 }
@@ -53,13 +66,14 @@ int scan_string(FILE *f, va_list ap)
 	int i = 0;
 	char *ptr = va_arg(ap, char *);
 	int c = fgetc(f);
-	while (c != ' ' && c != EOF)
+	while (!isspace(c) && c != EOF)
 	{
 		ptr[i] = c;
 		i++;
 		c = fgetc(f);
 	}
-	ungetc(c, f);
+	if (c != EOF)
+		ungetc(c, f);
 	ptr[i] = '\0';
     return (1);
 }

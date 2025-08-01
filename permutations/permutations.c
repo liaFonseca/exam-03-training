@@ -22,7 +22,10 @@ int	is_valid(char c, int index, char *sol)
 void	permutations(int index, int max, char *options, char *sol)
 {
 	if (index == max)
+	{
 		puts(sol);
+		return;
+	}
 	for (int i = 0; i < max; i++)
 	{
 		if(is_valid(options[i], index, sol))
